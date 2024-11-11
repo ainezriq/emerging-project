@@ -7,44 +7,49 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h2>Welcome, {{ username }}</h2>
-
-    {% if meeting_id %}
-        <p>Your meeting ID: <strong>{{ meeting_id }}</strong></p>
-        <p>Share this ID with others to join your meeting.</p>
-    {% endif %}
-
-    <!-- Video call container -->
     <div id="meeting-container">
-        <div id="local-video-container">
-            <video id="local-video" autoplay muted></video>
-        </div>
-        <div id="remote-video-container" class="hidden">
-            <video id="remote-video" autoplay></video>
+        <!-- Left Sidebar for Participants -->
+        <div id="participant-container">
+            <h3>Participants</h3>
+            <ul id="participant-list"></ul>
         </div>
 
-        <!-- Controls -->
-        <div id="controls">
-            <button id="mute-btn">Mute</button>
-            <button id="camera-btn">Turn Off Camera</button>
-            <button id="share-screen-btn">Share Screen</button>
-            <button id="leave-btn">Leave Meeting</button>
-        </div>
-    </div>
+        <!-- Right Section for Video and Chat -->
+        <div id="video-chat-container">
+            <h2>Welcome, {{ username }}</h2>
 
-    <!-- Chat Box -->
-    <div id="chat-container">
-        <div id="chat-box"></div>
-        <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Type a message..." />
-            <button id="send-btn">Send</button>
-        </div>
-    </div>
+            {% if meeting_id %}
+                <p>Your meeting ID: <strong>{{ meeting_id }}</strong></p>
+                <p>Share this ID with others to join your meeting.</p>
+            {% endif %}
 
-    <!-- Participant List -->
-    <div id="participant-container">
-        <h3>Participants</h3>
-        <ul id="participant-list"></ul>
+            <!-- Video call container -->
+            <div id="video-call-container">
+                <div id="local-video-container">
+                    <video id="local-video" autoplay muted></video>
+                </div>
+                <div id="remote-video-container" class="hidden">
+                    <video id="remote-video" autoplay></video>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div id="controls">
+                <button id="mute-btn">Mute</button>
+                <button id="camera-btn">Turn Off Camera</button>
+                <button id="share-screen-btn">Share Screen</button>
+                <button id="leave-btn">Leave Meeting</button>
+            </div>
+
+            <!-- Chat Box -->
+            <div id="chat-container">
+                <div id="chat-box"></div>
+                <div id="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="Type a message..." />
+                    <button id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -56,6 +61,7 @@
         let peerConnection;
         let isScreenSharing = false;
         const username = "{{ username }}";
+        const meeting_id = "{{ meeting_id }}";
 
         // UI elements
         const chatBox = document.getElementById("chat-box");
@@ -82,7 +88,7 @@
             if (message) {
                 displayMessage(`You: ${message}`);
                 chatInput.value = "";
-                socket.emit('send_message', { message: message, room_id: '{{ meeting_id }}', sender: username });
+                socket.emit('send_message', { message: message, room_id: meeting_id, sender: username });
             }
         };
 
@@ -93,7 +99,7 @@
         });
 
         socket.on('receive_message', function(data) {
-            if (data.room_id === '{{ meeting_id }}') {
+            if (data.room_id === meeting_id) {
                 displayMessage(`${data.sender}: ${data.message}`);
             }
         });
@@ -106,7 +112,7 @@
                 });
                 localVideo.srcObject = localStream;
                 createPeerConnection();
-                socket.emit('join_room', { room_id: '{{ meeting_id }}', username: username });
+                socket.emit('join_room', { room_id: meeting_id, username: username });
             } catch (error) {
                 console.error("Error accessing media devices.", error);
             }
@@ -119,62 +125,34 @@
             peerConnection.ontrack = (event) => {
                 remoteStream = event.streams[0];
                 remoteVideo.srcObject = remoteStream;
-                remoteVideoContainer.classList.remove("hidden"); // Show when stream is received
+                remoteVideoContainer.classList.remove("hidden");
             };
 
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    socket.emit('send_ice_candidate', { candidate: event.candidate, room_id: '{{ meeting_id }}' });
+                    socket.emit('send_ice_candidate', { candidate: event.candidate, room_id: meeting_id });
                 }
             };
 
             peerConnection.createOffer()
                 .then(offer => peerConnection.setLocalDescription(offer))
                 .then(() => {
-                    socket.emit('send_offer', { offer: peerConnection.localDescription, room_id: '{{ meeting_id }}' });
+                    socket.emit('send_offer', { offer: peerConnection.localDescription, room_id: meeting_id });
                 })
                 .catch(error => console.error("Error creating offer", error));
         }
 
-        // Add participant to the list
         socket.on('user_joined', function(data) {
-            if (data.room_id === '{{ meeting_id }}') {
+            if (data.room_id === meeting_id) {
                 const participantElement = document.createElement("li");
                 participantElement.textContent = data.username;
                 participantElement.setAttribute("data-username", data.username);
-
-                // Add participant controls if the current user is the host
-                if (username === '{{ host_username }}') {
-                    const muteControl = document.createElement("button");
-                    muteControl.textContent = "Mute/Unmute";
-                    muteControl.onclick = function() {
-                        socket.emit('mute_user', { room_id: '{{ meeting_id }}', username: data.username });
-                    };
-
-                    const videoControl = document.createElement("button");
-                    videoControl.textContent = "Toggle Video";
-                    videoControl.onclick = function() {
-                        socket.emit('toggle_video', { room_id: '{{ meeting_id }}', username: data.username });
-                    };
-
-                    const removeControl = document.createElement("button");
-                    removeControl.textContent = "Remove";
-                    removeControl.onclick = function() {
-                        socket.emit('remove_user', { room_id: '{{ meeting_id }}', username: data.username });
-                    };
-
-                    participantElement.appendChild(muteControl);
-                    participantElement.appendChild(videoControl);
-                    participantElement.appendChild(removeControl);
-                }
-
                 participantList.appendChild(participantElement);
             }
         });
 
-        // Remove participant from the list
         socket.on('user_left', function(data) {
-            if (data.room_id === '{{ meeting_id }}') {
+            if (data.room_id === meeting_id) {
                 const participantElement = document.querySelector(`li[data-username="${data.username}"]`);
                 if (participantElement) {
                     participantList.removeChild(participantElement);
@@ -182,7 +160,6 @@
             }
         });
 
-        // Participant controls
         muteBtn.onclick = function() {
             const audioTracks = localStream.getAudioTracks();
             audioTracks[0].enabled = !audioTracks[0].enabled;
@@ -228,7 +205,7 @@
             if (peerConnection) {
                 peerConnection.close();
             }
-            socket.emit('leave_room', { room_id: '{{ meeting_id }}', username: username });
+            socket.emit('leave_room', { room_id: meeting_id, username: username });
             window.location.href = "{{ url_for('dashboard') }}";
         };
 

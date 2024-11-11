@@ -22,16 +22,51 @@ body {
     margin: 0 auto;
     box-shadow: 0 4px 12px rgba(93, 64, 55, 0.2); /* Soft shadow with brown tint */
     margin-bottom: 20px; /* Space below the meeting container */
-}
-
-/* Controls class */
-#controls {
     display: flex;
-    justify-content: space-around; /* Space out the buttons evenly */
-    gap: 15px; /* Add space between the control buttons */
-    margin-top: 10px; /* Space above the controls */
+    justify-content: space-between; /* Flex layout for sidebar and video/chat */
 }
 
+/* Left sidebar for Participants */
+#participant-container {
+    width: 25%;
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    margin-right: 20px;
+    overflow-y: auto;
+}
+
+#participant-container h3 {
+    text-align: center;
+    font-size: 20px;
+    color: #5d4037; /* Dark brown */
+}
+
+#participant-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+#participant-list li {
+    font-size: 16px;
+    color: #6d4c41; /* Medium brown */
+    margin-bottom: 10px;
+}
+
+/* Right section for Video and Chat */
+#video-chat-container {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#video-call-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+    margin-bottom: 20px;
+}
 
 /* Video containers */
 #local-video-container, #remote-video-container {
@@ -39,12 +74,12 @@ body {
     border-radius: 8px;
     margin-bottom: 15px;
     padding: 10px;
+    width: 45%;
 }
 
 #remote-video-container {
     display: none; /* Hide the remote video container */
 }
-
 
 /* Video elements */
 video {
@@ -58,6 +93,7 @@ video {
     display: flex;
     justify-content: space-around;
     margin-top: 20px;
+    gap: 15px; /* Add space between the control buttons */
 }
 
 /* Button styles */
@@ -124,7 +160,6 @@ h2 {
     align-items: center;
     gap: 10px; /* Adjust this value as needed for more or less space */
 }
-
 
 /* Chat input field */
 #chat-input {
