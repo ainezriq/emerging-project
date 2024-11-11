@@ -1,13 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-import flask
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, EmailField
-from wtforms.validators import DataRequired, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import string
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, EmailField
+from wtforms.validators import DataRequired, Length
 
 # Flask app setup
 app = Flask(__name__)
@@ -140,6 +139,7 @@ def join():
             flash("Invalid Room ID. Please try again.", "danger")
     return render_template("join.html")
 
+# SocketIO events
 @socketio.on('send_message')
 def handle_send_message(data):
     room_id = data['room_id']
@@ -163,21 +163,18 @@ def handle_leave_room(data):
 def handle_mute_user(data):
     room_id = data['room_id']
     username = data['username']
-    # Here you would mute the user's audio stream, handling it on the client side
     emit('user_muted', {'username': username, 'room_id': room_id}, to=room_id)
 
 @socketio.on('toggle_video')
 def handle_toggle_video(data):
     room_id = data['room_id']
     username = data['username']
-    # Here you would toggle the user's video stream, handling it on the client side
     emit('user_video_toggled', {'username': username, 'room_id': room_id}, to=room_id)
 
 @socketio.on('remove_user')
 def handle_remove_user(data):
     room_id = data['room_id']
     username = data['username']
-    # Handle removing the user from the room
     emit('user_removed', {'username': username, 'room_id': room_id}, to=room_id)
 
 @socketio.on('share_screen')
