@@ -1,0 +1,157 @@
+/* Basic reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f2ece1; /* Light beige */
+    color: #5d4037; /* Dark brown */
+    padding: 20px;
+}
+
+/* Meeting container */
+#meeting-container {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    width: 80%;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(93, 64, 55, 0.2); /* Soft shadow with brown tint */
+    margin-bottom: 20px; /* Space below the meeting container */
+}
+
+/* Controls class */
+#controls {
+    display: flex;
+    justify-content: space-around; /* Space out the buttons evenly */
+    gap: 15px; /* Add space between the control buttons */
+    margin-top: 10px; /* Space above the controls */
+}
+
+
+/* Video containers */
+#local-video-container, #remote-video-container {
+    background-color: #d7ccc8; /* Light brown background */
+    border-radius: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
+}
+
+#remote-video-container {
+    display: none; /* Hide the remote video container */
+}
+
+
+/* Video elements */
+video {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(93, 64, 55, 0.3);
+}
+
+/* Controls section */
+#controls {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+/* Button styles */
+button {
+    background-color: #8d6e63; /* Brown button */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 150px;
+}
+
+button:hover {
+    background-color: #6d4c41; /* Darker brown on hover */
+}
+
+/* Heading and meeting ID */
+h2 {
+    text-align: center;
+    font-size: 24px;
+    color: #5d4037; /* Dark brown */
+    margin-bottom: 20px;
+}
+
+/* Meeting ID information */
+#meeting-info {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #6d4c41; /* Medium brown */
+}
+
+#meeting-info strong {
+    color: #3e2723; /* Darker brown */
+}
+
+/* Chat container */
+#chat-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(93, 64, 55, 0.2); /* Soft shadow */
+    padding: 20px;
+    margin-top: 20px;
+    width: 80%;
+    margin: 20px auto;
+}
+
+/* Chat box */
+#chat-box {
+    height: 300px;
+    overflow-y: auto;
+    background-color: #f2ece1; /* Light beige */
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+/* Chat input container */
+#chat-input-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px; /* Adjust this value as needed for more or less space */
+}
+
+
+/* Chat input field */
+#chat-input {
+    width: 80%;
+    padding: 8px;
+    border: 1px solid #b0a099; /* Soft brown border */
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Send button */
+#send-btn {
+    background-color: #8d6e63; /* Brown button */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#send-btn:hover {
+    background-color: #6d4c41; /* Darker brown on hover */
+}
+
+/* Messages in chat box */
+#chat-box p {
+    color: #5d4037; /* Dark brown for text */
+    margin: 5px 0;
+}

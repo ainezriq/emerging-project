@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h2>Welcome, {{ username }}</h2>
+
+    {% if meeting_id %}
+        <p>Your meeting ID: <strong>{{ meeting_id }}</strong></p>
+        <p>Share this ID with others to join your meeting.</p>
+    {% endif %}
+
+    <!-- Video call container -->
+    <div id="meeting-container">
+        <div id="local-video-container">
+            <video id="local-video" autoplay muted></video>
+        </div>
+        <div id="remote-video-container" class="hidden">
+            <video id="remote-video" autoplay></video>
+        </div>
+
+        <!-- Controls -->
+        <div id="controls">
+            <button id="mute-btn">Mute</button>
+            <button id="camera-btn">Turn Off Camera</button>
+            <button id="share-screen-btn">Share Screen</button>
+            <button id="leave-btn">Leave Meeting</button>
+        </div>
+    </div>
+
+    <!-- Chat Box -->
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type a message..." />
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <!-- Participant List -->
+    <div id="participant-container">
+        <h3>Participants</h3>
+        <ul id="participant-list"></ul>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+
+        let localStream;
+        let remoteStream;
+        let peerConnection;
+        let isScreenSharing = false;
+        const username = "{{ username }}";
+
+        // UI elements
+        const chatBox = document.getElementById("chat-box");
+        const chatInput = document.getElementById("chat-input");
+        const sendBtn = document.getElementById("send-btn");
+        const muteBtn = document.getElementById("mute-btn");
+        const cameraBtn = document.getElementById("camera-btn");
+        const shareScreenBtn = document.getElementById("share-screen-btn");
+        const leaveBtn = document.getElementById("leave-btn");
+        const localVideo = document.getElementById("local-video");
+        const remoteVideo = document.getElementById("remote-video");
+        const remoteVideoContainer = document.getElementById("remote-video-container");
+        const participantList = document.getElementById("participant-list");
+
+        function displayMessage(message) {
+            const messageElement = document.createElement("p");
+            messageElement.textContent = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        sendBtn.onclick = function() {
+            const message = chatInput.value.trim();
+            if (message) {
+                displayMessage(`You: ${message}`);
+                chatInput.value = "";
+                socket.emit('send_message', { message: message, room_id: '{{ meeting_id }}', sender: username });
+            }
+        };
+
+        chatInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendBtn.click();
+            }
+        });
+
+        socket.on('receive_message', function(data) {
+            if (data.room_id === '{{ meeting_id }}') {
+                displayMessage(`${data.sender}: ${data.message}`);
+            }
+        });
+
+        async function getLocalStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                localVideo.srcObject = localStream;
+                createPeerConnection();
+                socket.emit('join_room', { room_id: '{{ meeting_id }}', username: username });
+            } catch (error) {
+                console.error("Error accessing media devices.", error);
+            }
+        }
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection();
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            peerConnection.ontrack = (event) => {
+                remoteStream = event.streams[0];
+                remoteVideo.srcObject = remoteStream;
+                remoteVideoContainer.classList.remove("hidden"); // Show when stream is received
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('send_ice_candidate', { candidate: event.candidate, room_id: '{{ meeting_id }}' });
+                }
+            };
+
+            peerConnection.createOffer()
+                .then(offer => peerConnection.setLocalDescription(offer))
+                .then(() => {
+                    socket.emit('send_offer', { offer: peerConnection.localDescription, room_id: '{{ meeting_id }}' });
+                })
+                .catch(error => console.error("Error creating offer", error));
+        }
+
+        // Add participant to the list
+        socket.on('user_joined', function(data) {
+            if (data.room_id === '{{ meeting_id }}') {
+                const participantElement = document.createElement("li");
+                participantElement.textContent = data.username;
+                participantElement.setAttribute("data-username", data.username);
+
+                // Add participant controls if the current user is the host
+                if (username === '{{ host_username }}') {
+                    const muteControl = document.createElement("button");
+                    muteControl.textContent = "Mute/Unmute";
+                    muteControl.onclick = function() {
+                        socket.emit('mute_user', { room_id: '{{ meeting_id }}', username: data.username });
+                    };
+
+                    const videoControl = document.createElement("button");
+                    videoControl.textContent = "Toggle Video";
+                    videoControl.onclick = function() {
+                        socket.emit('toggle_video', { room_id: '{{ meeting_id }}', username: data.username });
+                    };
+
+                    const removeControl = document.createElement("button");
+                    removeControl.textContent = "Remove";
+                    removeControl.onclick = function() {
+                        socket.emit('remove_user', { room_id: '{{ meeting_id }}', username: data.username });
+                    };
+
+                    participantElement.appendChild(muteControl);
+                    participantElement.appendChild(videoControl);
+                    participantElement.appendChild(removeControl);
+                }
+
+                participantList.appendChild(participantElement);
+            }
+        });
+
+        // Remove participant from the list
+        socket.on('user_left', function(data) {
+            if (data.room_id === '{{ meeting_id }}') {
+                const participantElement = document.querySelector(`li[data-username="${data.username}"]`);
+                if (participantElement) {
+                    participantList.removeChild(participantElement);
+                }
+            }
+        });
+
+        // Participant controls
+        muteBtn.onclick = function() {
+            const audioTracks = localStream.getAudioTracks();
+            audioTracks[0].enabled = !audioTracks[0].enabled;
+            muteBtn.textContent = audioTracks[0].enabled ? "Mute" : "Unmute";
+        };
+
+        cameraBtn.onclick = function() {
+            const videoTracks = localStream.getVideoTracks();
+            videoTracks[0].enabled = !videoTracks[0].enabled;
+            cameraBtn.textContent = videoTracks[0].enabled ? "Turn Off Camera" : "Turn On Camera";
+        };
+
+        shareScreenBtn.onclick = async function() {
+            if (!isScreenSharing) {
+                try {
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    const screenTrack = screenStream.getVideoTracks()[0];
+                    const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+                    sender.replaceTrack(screenTrack);
+                    localVideo.srcObject = screenStream;
+                    isScreenSharing = true;
+                    shareScreenBtn.textContent = "Stop Sharing";
+                    screenTrack.onended = stopScreenSharing;
+                } catch (error) {
+                    console.error("Error starting screen sharing:", error);
+                }
+            } else {
+                stopScreenSharing();
+            }
+        };
+
+        function stopScreenSharing() {
+            const videoTrack = localStream.getVideoTracks()[0];
+            const sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+            sender.replaceTrack(videoTrack);
+            localVideo.srcObject = localStream;
+            isScreenSharing = false;
+            shareScreenBtn.textContent = "Share Screen";
+        }
+
+        leaveBtn.onclick = function() {
+            localStream.getTracks().forEach(track => track.stop());
+            if (peerConnection) {
+                peerConnection.close();
+            }
+            socket.emit('leave_room', { room_id: '{{ meeting_id }}', username: username });
+            window.location.href = "{{ url_for('dashboard') }}";
+        };
+
+        getLocalStream();
+    </script>
+</body>
+</html>

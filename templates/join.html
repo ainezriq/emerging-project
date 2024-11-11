@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Meeting</title>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Join a Meeting</h1>
+        <form method="POST">
+            <input type="text" name="roomID" placeholder="Enter Room ID" required>
+            <button type="submit">Join Room</button>
+        </form>
+
+        <!-- Button to go back to the dashboard -->
+        <a href="{{ url_for('dashboard') }}">
+            <button type="button">Back to Dashboard</button>
+        </a>
+    </div>
+</body>
+</html>
