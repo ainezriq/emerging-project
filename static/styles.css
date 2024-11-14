@@ -18,7 +18,7 @@ body {
     background-color: white;
     border-radius: 8px;
     padding: 20px;
-    width: 80%;
+    width: 85%; /* Increased the width */
     margin: 0 auto;
     box-shadow: 0 4px 12px rgba(93, 64, 55, 0.2); /* Soft shadow with brown tint */
     margin-bottom: 20px; /* Space below the meeting container */
@@ -28,7 +28,7 @@ body {
 
 /* Left sidebar for Participants */
 #participant-container {
-    width: 25%;
+    width: 20%; /* Reduced the width */
     background-color: #f0f0f0;
     padding: 10px;
     border-radius: 8px;
@@ -55,7 +55,7 @@ body {
 
 /* Right section for Video and Chat */
 #video-chat-container {
-    width: 70%;
+    width: 75%; /* Increased the width */
     display: flex;
     flex-direction: column;
     align-items: center;
